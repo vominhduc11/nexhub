@@ -31,3 +31,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Security - Keys and Certificates ###
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+private_key*
+public_key*
+keystore*
+truststore*
