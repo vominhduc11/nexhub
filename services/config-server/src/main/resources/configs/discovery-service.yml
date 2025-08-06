@@ -1,0 +1,42 @@
+server:
+  port: ${SERVER_PORT:8761}
+
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:discovery-service}
+
+eureka:
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:discovery-service}
+    prefer-ip-address: ${EUREKA_INSTANCE_PREFER_IP:false}
+  client:
+    register-with-eureka: ${EUREKA_CLIENT_REGISTER_WITH_EUREKA:false}
+    fetch-registry: ${EUREKA_CLIENT_FETCH_REGISTRY:false}
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL:http://discovery-service:8761/eureka/}
+  server:
+    enable-self-preservation: ${EUREKA_SERVER_ENABLE_SELF_PRESERVATION:true}
+    eviction-interval-timer-in-ms: ${EUREKA_SERVER_EVICTION_INTERVAL:5000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info,metrics}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+
+logging:
+  level:
+    com:
+      netflix:
+        eureka: ${LOGGING_LEVEL_EUREKA:INFO}
+        discovery: ${LOGGING_LEVEL_DISCOVERY:INFO}
+      devwonder:
+        discovery_service: ${LOGGING_LEVEL_COM_DEVWONDER_DISCOVERY_SERVICE:DEBUG}
+    org:
+      springframework:
+        cloud: ${LOGGING_LEVEL_SPRING_CLOUD:INFO}
+  pattern:
+    console: "${LOGGING_PATTERN_CONSOLE:%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n}"

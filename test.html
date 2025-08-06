@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; }
+        button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+        #result { margin: 20px 0; padding: 15px; border-radius: 5px; min-height: 50px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🌐 CORS Test</h1>
+    <button onclick="testAPI()">Test API Gateway CORS</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/test');
+                const data = await response.text();
+                
+                result.className = 'success';
+                result.innerHTML = `✅ Success: ${data}`;
+            } catch (error) {
+                result.className = 'error';
+                result.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

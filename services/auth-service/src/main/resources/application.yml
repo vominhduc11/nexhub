@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:auth-service}
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}"
+  cloud:
+    config:
+      fail-fast: ${SPRING_CLOUD_CONFIG_FAIL_FAST:false}
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/nexhub}
+    username: ${DATABASE_USERNAME:voduc}
+    password: ${DATABASE_PASSWORD:voduc123}
+    driver-class-name: ${DATABASE_DRIVER:org.postgresql.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        dialect: ${JPA_HIBERNATE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
+        format_sql: ${JPA_FORMAT_SQL:true}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://discovery-service:8761/eureka/}
+    register-with-eureka: ${EUREKA_CLIENT_REGISTER_WITH_EUREKA:true}
+    fetch-registry: ${EUREKA_CLIENT_FETCH_REGISTRY:true}
+  instance:
+    prefer-ip-address: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:true}
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:auth-service}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info,metrics,prometheus}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+  prometheus:
+    metrics:
+      export:
+        enabled: ${MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED:true}
+  metrics:
+    tags:
+      service: ${MANAGEMENT_METRICS_TAGS_SERVICE:auth-service}
+      environment: ${MANAGEMENT_METRICS_TAGS_ENVIRONMENT:development}
+
+logging:
+  level:
+    org:
+      springframework:
+        security: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY:INFO}
+        web: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB:INFO}
+    com:
+      devwonder:
+        auth_service: ${LOGGING_LEVEL_COM_DEVWONDER_AUTH_SERVICE:DEBUG}
+  pattern:
+    console: "${LOGGING_PATTERN_CONSOLE:%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n}"
+    file: "${LOGGING_PATTERN_FILE:%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n}"

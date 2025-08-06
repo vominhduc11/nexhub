@@ -1,0 +1,176 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: nexhub_postgres
+    environment:
+      POSTGRES_DB: nexhub
+      POSTGRES_USER: voduc
+      POSTGRES_PASSWORD: voduc123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - nexhub-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: nexhub_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nexhub.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - nexhub-network
+
+  discovery-service:
+    image: openjdk:17-jdk-slim
+    container_name: nexhub_discovery_service
+    ports:
+      - "8761:8761"
+    volumes:
+      - ./discovery-service.jar:/app/discovery-service.jar
+    working_dir: /app
+    environment:
+      - SPRING_APPLICATION_NAME=discovery-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/127.0.0.1/8761' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      config-server:
+        condition: service_healthy
+    networks:
+      - nexhub-network
+    command: java -jar discovery-service.jar
+
+  config-server:
+    image: openjdk:17-jdk-slim
+    container_name: nexhub_config_server
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./config-server.jar:/app/config-server.jar
+      - config_data:/data
+    working_dir: /app
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+      - SPRING_APPLICATION_NAME=config-server
+      - SERVER_PORT=8888
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=classpath:/configs/
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics
+      - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=always
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CLOUD_CONFIG=INFO
+      - LOGGING_LEVEL_COM_DEVWONDER=DEBUG
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/127.0.0.1/8888' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - nexhub-network
+    command: java -jar config-server.jar
+
+  api-gateway:
+    image: openjdk:17-jdk-slim
+    container_name: nexhub_api_gateway
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./api-gateway.jar:/app/api-gateway.jar
+    working_dir: /app
+    environment:
+      - SPRING_APPLICATION_NAME=api-gateway
+      - SERVER_PORT=8081
+      - CONFIG_SERVER_URL=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+      - AUTH_SERVICE_URI=http://auth-service:8082
+      - AUTH_SERVICE_JWK_URI=http://auth-service:8082/auth/.well-known/jwks.json
+      - CORS_ALLOWED_ORIGINS=*
+      - CORS_ALLOW_CREDENTIALS=false
+      - MANAGEMENT_ENDPOINTS_INCLUDE=health,info,metrics,prometheus,gateway
+      - MANAGEMENT_HEALTH_SHOW_DETAILS=always
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics,prometheus,gateway
+      - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=always
+      - MANAGEMENT_ENDPOINT_GATEWAY_ENABLED=true
+      - MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED=true
+      - MANAGEMENT_METRICS_TAGS_SERVICE=api-gateway
+      - MANAGEMENT_METRICS_TAGS_ENVIRONMENT=docker
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CLOUD_GATEWAY=INFO
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=INFO
+      - LOGGING_LEVEL_COM_DEVWONDER_API_GATEWAY=DEBUG
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+    networks:
+      - nexhub-network
+    command: java -jar api-gateway.jar
+
+  auth-service:
+    image: openjdk:17-jdk-slim
+    container_name: nexhub_auth_service
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./auth-service.jar:/app/auth-service.jar
+    working_dir: /app
+    environment:
+      - SPRING_APPLICATION_NAME=auth-service
+      - SERVER_PORT=8082
+      - CONFIG_SERVER_URL=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/nexhub
+      - DATABASE_USERNAME=voduc
+      - DATABASE_PASSWORD=voduc123
+      - DATABASE_DRIVER=org.postgresql.Driver
+      - JPA_HIBERNATE_DDL_AUTO=update
+      - JPA_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - JPA_SHOW_SQL=true
+      - JPA_FORMAT_SQL=true
+      - H2_CONSOLE_ENABLED=false
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics,prometheus
+      - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=always
+      - MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED=true
+      - MANAGEMENT_METRICS_TAGS_SERVICE=auth-service
+      - MANAGEMENT_METRICS_TAGS_ENVIRONMENT=docker
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=INFO
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB=INFO
+      - LOGGING_LEVEL_COM_DEVWONDER_AUTH_SERVICE=DEBUG
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    networks:
+      - nexhub-network
+    command: java -jar auth-service.jar
+
+networks:
+  nexhub-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  config_data:

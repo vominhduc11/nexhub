@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "NexHub PostgreSQL",
+      "Group": "Servers",
+      "Port": 5432,
+      "Username": "voduc",
+      "Host": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "nexhub",
+      "PassFile": "/var/lib/pgadmin/pgpassfile"
+    }
+  }
+}

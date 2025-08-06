@@ -1,0 +1,27 @@
+server:
+  port: ${SERVER_PORT:8888}
+
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:config-server}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:native}
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: ${SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS:classpath:/configs/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info,metrics}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+
+logging:
+  level:
+    org.springframework.cloud.config: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CLOUD_CONFIG:INFO}
+    com.devwonder: ${LOGGING_LEVEL_COM_DEVWONDER:DEBUG}

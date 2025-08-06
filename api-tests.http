@@ -1,0 +1,70 @@
+### NexHub API Tests
+### Testing all services through API Gateway
+
+### Variables
+@baseUrl = http://localhost:8081
+@authUrl = http://localhost:8082
+
+###
+### 1. Infrastructure Health Checks
+### Config Server - API Gateway config
+GET http://localhost:8888/api-gateway/default
+
+###
+### Config Server - Auth Service config
+GET http://localhost:8888/auth-service/default
+
+###
+### API Gateway Health Check
+GET {{baseUrl}}/actuator/health
+
+###
+### 2. Auth Service Tests
+### JWKS endpoint (public key for JWT verification)
+GET {{baseUrl}}/api/auth/.well-known/jwks.json
+
+###
+### Login to get JWT token
+### @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+###
+### Test protected endpoint without token (should return 401)
+GET {{baseUrl}}/api/auth/test
+
+###
+### Test protected endpoint with valid JWT token
+GET {{baseUrl}}/api/auth/test
+Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJuZXhodWItYXBpLWdhdGV3YXkiLCJyb2xlIjoiQURNSU4iLCJpc3MiOiJuZXhodWItYXV0aC1zZXJ2aWNlIiwic3ViIjoiYWRtaW4iLCJpYXQiOjE3NTQzODY2NjAsImV4cCI6MTc1NDQ3MzA2MH0.RKjrAdzWMb-vdojau5qUc8Nh7GNm4fBptdwbsiCDlEvaG-1289qQ_AdiW2pebWBVc-ZXVSF8iSJsLJ4lEd57Fw-4WKdgJU3EMffZbvnn5R9_iHEwk1n1p536I4WtA7eIGA7lHapDwNLOCIHYq-rzPIgYaHx-fGqX0rD__f2kQDv5wFoRZOeYOVp7EG7L2FKXMGAr-MJWcmfEtNF7e0wuxUqM5XCruf8tn3-zc7b8JwYMBPiFyWPFgZTQg8Px2_arVHSYLVxF5SY151JajioLnCn_JnSyVUrdhn3VYQu_ftEvlUFI7jiBTVhP0pzF6CQD--iNA30qcBkTQF0Jqn0m7A
+
+###
+### 3. Security & Error Testing
+### CORS preflight request
+OPTIONS {{baseUrl}}/api/auth/test
+Origin: http://localhost:3000
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Authorization
+
+###
+### Test non-existent service endpoint
+GET {{baseUrl}}/api/nonexistent
+
+###
+### Test non-existent auth endpoint
+GET {{baseUrl}}/api/auth/nonexistent
+
+###
+### Test malformed token
+GET {{baseUrl}}/api/auth/test
+Authorization: Bearer invalid-token
+
+###
+### Test expired token (manual test - use old token)
+GET {{baseUrl}}/api/auth/test
+Authorization: Bearer EXPIRED_TOKEN_HERE
